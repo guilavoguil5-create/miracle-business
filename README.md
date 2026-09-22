@@ -44,6 +44,21 @@ Cette logique est écrite dans `lib/logique/argent.dart` et couverte par les
 tests de `test/argent_test.dart`, qui reprennent les vrais prix et le vrai
 barème.
 
+## Les écrans
+
+Quatre onglets (Aujourd'hui, Commandes, Stock, Argent) et un bouton + toujours
+à portée, qui ouvre une nouvelle commande.
+
+- **Aujourd'hui** : les chiffres du jour, les commandes en cours, ce que les
+  dépositaires doivent.
+- **Commandes** : le journal, filtrable et cherchable, et la fiche de chaque
+  commande.
+- **Stock** : ce qui reste chez qui, l'arrivage et sa répartition, et
+  l'inventaire d'un dépositaire.
+- **Argent** : le solde de chaque dépositaire, le pointage du soir et
+  l'historique des pointages clôturés.
+- **Réglages** : les produits, les zones et les dépositaires.
+
 ## Organisation du code
 
 ```

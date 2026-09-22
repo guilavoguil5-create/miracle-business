@@ -5,6 +5,8 @@ import '../commun/format.dart';
 import '../commun/libelles.dart';
 import '../commun/widgets.dart';
 import '../donnees/fournisseurs.dart';
+import 'pointage.dart';
+import 'solde.dart';
 
 class EcranArgent extends ConsumerWidget {
   const EcranArgent({super.key});
@@ -77,19 +79,41 @@ class EcranArgent extends ConsumerWidget {
                                   '${dateCourte(vue.commande.date)} · '
                                   '${vue.libelleProduits}',
                             ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: FilledButton.tonalIcon(
+                                onPressed: () => Navigator.of(context).push(
+                                  MaterialPageRoute<void>(
+                                    builder: (_) => EcranPointage(
+                                      depositaireId: solde.depositaire.id,
+                                    ),
+                                  ),
+                                ),
+                                icon: const Icon(Icons.fact_check_outlined),
+                                label: const Text('Pointer'),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                onPressed: () => Navigator.of(context).push(
+                                  MaterialPageRoute<void>(
+                                    builder: (_) => EcranSolde(
+                                      depositaireId: solde.depositaire.id,
+                                    ),
+                                  ),
+                                ),
+                                icon: const Icon(Icons.history),
+                                label: const Text('Historique'),
+                              ),
+                            ),
+                          ],
+                        ),
                       ],
                     ),
                   ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
-                  child: Text(
-                    'Le pointage du soir, qui compare le rapport du coursier à '
-                    'vos commandes et met de côté les lignes de sa collègue, '
-                    'arrive dans la prochaine version.',
-                    style: theme.textTheme.bodySmall
-                        ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                  ),
-                ),
               ],
             ),
     );

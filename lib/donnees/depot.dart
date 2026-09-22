@@ -220,6 +220,53 @@ class Depot {
         );
   }
 
+
+  /// Clôture un pointage.
+  ///
+  /// [retenues] ne contient que les commandes qu'elle a reconnues dans le
+  /// rapport, avec le montant réellement porté sur le rapport (qui peut
+  /// différer de ce qui était attendu). Les totaux du rapport ne sont jamais
+  /// repris : le dû est recalculé à partir de ces seules lignes.
+  Future<int> cloturerPointage({
+    required DateTime date,
+    required Depositaire depositaire,
+    required int verseReel,
+    required List<({int commandeId, String cliente, int montantRapport})>
+        retenues,
+  }) {
+    return base.transaction(() async {
+      final pointageId = await base.into(base.pointages).insert(
+            PointagesCompanion.insert(
+              date: date,
+              depositaireId: depositaire.id,
+              verseReel: Value(verseReel),
+              cloture: const Value(true),
+            ),
+          );
+
+      for (final retenue in retenues) {
+        await base.into(base.lignesRapport).insert(
+              LignesRapportCompanion.insert(
+                pointageId: pointageId,
+                cliente: Value(retenue.cliente),
+                prix: Value(retenue.montantRapport),
+                dansCatalogue: const Value(true),
+                incluse: const Value(true),
+                commandeId: Value(retenue.commandeId),
+              ),
+            );
+
+        await (base.update(base.commandes)
+              ..where((c) => c.id.equals(retenue.commandeId)))
+            .write(
+          const CommandesCompanion(etat: Value(EtatCommande.reversee)),
+        );
+      }
+
+      return pointageId;
+    });
+  }
+
   Future<void> enregistrerProduit({
     int? id,
     required String nom,

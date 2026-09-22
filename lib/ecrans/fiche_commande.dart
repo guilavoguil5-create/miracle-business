@@ -14,7 +14,18 @@ import '../donnees/fournisseurs.dart';
 /// dépositaire : c'est le seul endroit où elle se saisit, sinon le stock
 /// affiché finit par ne plus rien vouloir dire.
 class FicheCommande extends ConsumerStatefulWidget {
-  const FicheCommande({super.key});
+  /// Dépositaire imposé à l'ouverture, quand la fiche est ouverte depuis le
+  /// pointage pour rattraper une vente faite hors circuit.
+  final Depositaire? depositaireInitial;
+
+  /// Ouvre la fiche avec « déjà servie » déjà activé.
+  final bool dejaServieInitial;
+
+  const FicheCommande({
+    this.depositaireInitial,
+    this.dejaServieInitial = false,
+    super.key,
+  });
 
   @override
   ConsumerState<FicheCommande> createState() => _FicheCommandeState();
@@ -50,7 +61,9 @@ class _FicheCommandeState extends ConsumerState<FicheCommande> {
     if (_initialise) return;
     _initialise = true;
     _zone = i.zones.isEmpty ? null : i.zones.first;
-    _depositaire = _depositairePour(_mode, i.depositaires);
+    _depositaire =
+        widget.depositaireInitial ?? _depositairePour(_mode, i.depositaires);
+    _dejaServie = widget.dejaServieInitial;
   }
 
   /// Une livraison part chez les coursiers, un retrait chez la cousine.

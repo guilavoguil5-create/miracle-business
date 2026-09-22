@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../commun/widgets.dart';
 import '../donnees/fournisseurs.dart';
+import 'arrivage.dart';
+import 'inventaire.dart';
 
 class EcranStock extends ConsumerWidget {
   const EcranStock({super.key});
@@ -37,6 +39,17 @@ class EcranStock extends ConsumerWidget {
                 for (final depositaire in instantane.depositaires)
                   Bloc(
                     titre: depositaire.nom,
+                    action: TextButton.icon(
+                      onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => EcranInventaire(
+                            depositaireId: depositaire.id,
+                          ),
+                        ),
+                      ),
+                      icon: const Icon(Icons.checklist, size: 18),
+                      label: const Text('Compter'),
+                    ),
                     enfant: Column(
                       children: [
                         for (final ligne in lignes.where(
@@ -49,12 +62,23 @@ class EcranStock extends ConsumerWidget {
                     ),
                   ),
                 Padding(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16, vertical: 4),
+                  child: FilledButton.tonalIcon(
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => const EcranArrivage(),
+                      ),
+                    ),
+                    icon: const Icon(Icons.local_shipping_outlined),
+                    label: const Text('Enregistrer un arrivage'),
+                  ),
+                ),
+                Padding(
                   padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
                   child: Text(
                     'Le stock bouge tout seul : il descend quand une commande '
-                    'est enregistrée, et remonte quand elle est annulée. '
-                    'L\'arrivage et l\'inventaire arrivent dans la prochaine '
-                    'version.',
+                    'est enregistrée, et remonte quand elle est annulée.',
                     style: theme.textTheme.bodySmall
                         ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                   ),

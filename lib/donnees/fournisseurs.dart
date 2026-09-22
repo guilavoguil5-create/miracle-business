@@ -292,3 +292,65 @@ class ResumeDuJour {
 final resumeDuJourProvider = Provider<ResumeDuJour>(
   (ref) => ResumeDuJour(ref.watch(commandesDuJourProvider)),
 );
+
+final pointagesProvider = StreamProvider<List<Pointage>>((ref) {
+  final base = ref.watch(baseProvider);
+  return (base.select(base.pointages)
+        ..orderBy([
+          (p) => OrderingTerm(expression: p.date, mode: OrderingMode.desc),
+          (p) => OrderingTerm(expression: p.id, mode: OrderingMode.desc),
+        ]))
+      .watch();
+});
+
+final lignesRapportProvider = StreamProvider<List<LigneRapport>>((ref) {
+  final base = ref.watch(baseProvider);
+  return base.select(base.lignesRapport).watch();
+});
+
+/// Un pointage déjà clôturé, rechiffré depuis ses propres lignes.
+class PointageVue {
+  final Pointage pointage;
+  final List<LigneRapport> lignes;
+  final Map<int, Commande> commandes;
+
+  const PointageVue({
+    required this.pointage,
+    required this.lignes,
+    required this.commandes,
+  });
+
+  /// Recalculé, jamais recopié du bas du rapport.
+  int get du => lignes.fold(0, (somme, l) {
+        final tarif = l.commandeId == null
+            ? 0
+            : commandes[l.commandeId!]?.tarifCoursier ?? 0;
+        return somme + l.prix - tarif;
+      });
+
+  int get verse => pointage.verseReel;
+  int get ecart => verse - du;
+}
+
+final pointagesVuesProvider = Provider<List<PointageVue>>((ref) {
+  final pointages = ref.watch(pointagesProvider).valueOrNull;
+  final lignes = ref.watch(lignesRapportProvider).valueOrNull;
+  final instantane = ref.watch(instantaneProvider);
+  if (pointages == null || lignes == null || instantane == null) {
+    return const [];
+  }
+
+  final parPointage = <int, List<LigneRapport>>{};
+  for (final l in lignes) {
+    parPointage.putIfAbsent(l.pointageId, () => []).add(l);
+  }
+  final commandes = {for (final c in instantane.commandes) c.id: c};
+
+  return pointages
+      .map((p) => PointageVue(
+            pointage: p,
+            lignes: parPointage[p.id] ?? const [],
+            commandes: commandes,
+          ))
+      .toList();
+});
