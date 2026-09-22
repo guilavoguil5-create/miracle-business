@@ -1,0 +1,61 @@
+name: Construire l'APK
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Version de Flutter
+        run: flutter --version
+
+      - name: Dépendances
+        run: flutter pub get
+
+      - name: Générer le code drift
+        run: dart run build_runner build --delete-conflicting-outputs
+
+      - name: Analyse statique
+        run: flutter analyze --no-fatal-infos
+
+      - name: Tests
+        run: flutter test
+
+      # Le dossier android/ n'est pas versionné : on le régénère ici, dans un
+      # dossier à part, puis on le copie. Rien de ce qui est écrit à la main
+      # n'est touché.
+      - name: Générer le projet Android
+        run: |
+          flutter create --platforms=android \
+            --project-name miracle_business \
+            --org com.miraclebusiness \
+            /tmp/socle
+          cp -r /tmp/socle/android ./android
+          sed -i 's/android:label="miracle_business"/android:label="Miracle business"/' \
+            android/app/src/main/AndroidManifest.xml
+
+      - name: Construire l'APK
+        run: flutter build apk --release
+
+      - name: Publier l'APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: miracle-business-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error

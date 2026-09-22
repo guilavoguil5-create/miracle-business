@@ -1,0 +1,29 @@
+name: miracle_business
+description: Gestion des commandes, du stock et de l'argent de Miracle business.
+publish_to: "none"
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.4.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  drift: ^2.20.0
+  sqlite3_flutter_libs: ">=0.5.0"
+  path_provider: ">=2.1.0"
+  path: ">=1.9.0"
+  flutter_riverpod: ^2.5.0
+  share_plus: ">=9.0.0"
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ">=3.0.0"
+  drift_dev: ^2.20.0
+  build_runner: ">=2.4.0"
+
+flutter:
+  uses-material-design: true
