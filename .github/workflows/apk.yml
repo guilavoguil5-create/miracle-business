@@ -6,6 +6,11 @@ on:
   pull_request:
   workflow_dispatch:
 
+# Les journaux de la CI ne sont pas lisibles depuis la session qui écrit ce
+# code : l'hôte qui les sert est bloqué, et les artifacts aussi. Chaque pas
+# garde donc sa sortie dans build.log, et en cas d'échec le journal repart en
+# annotation, qui est lisible par l'API. Sans ça, un échec ne dit rien de plus
+# que « exit code 1 ».
 jobs:
   apk:
     runs-on: ubuntu-latest
@@ -22,36 +27,55 @@ jobs:
           channel: stable
           cache: true
 
-      # Tout en un seul bloc, dont la sortie est gardée : les journaux de la CI
-      # ne sont pas lisibles depuis la session qui écrit ce code, alors que le
-      # résumé du job l'est. C'est par là que passent les erreurs.
-      - name: Construire
+      - name: Version de Flutter
+        run: set -o pipefail; flutter --version 2>&1 | tee -a build.log
+
+      - name: Dépendances
+        run: set -o pipefail; flutter pub get 2>&1 | tee -a build.log
+
+      - name: Code généré
+        run: |
+          set -o pipefail
+          dart run build_runner build --delete-conflicting-outputs 2>&1 \
+            | tee -a build.log
+
+      - name: Analyse statique
+        run: set -o pipefail; flutter analyze --no-fatal-infos 2>&1 | tee -a build.log
+
+      - name: Tests
+        run: set -o pipefail; flutter test 2>&1 | tee -a build.log
+
+      - name: Générer le projet Android
         run: |
           set -o pipefail
           {
-            flutter --version &&
-            flutter pub get &&
-            dart run build_runner build --delete-conflicting-outputs &&
-            flutter analyze --no-fatal-infos &&
-            flutter test &&
             flutter create --platforms=android \
               --project-name miracle_business \
               --org com.miraclebusiness \
               /tmp/socle &&
             cp -r /tmp/socle/android ./android &&
             sed -i 's/android:label="miracle_business"/android:label="Miracle business"/' \
-              android/app/src/main/AndroidManifest.xml &&
-            flutter build apk --release
-          } 2>&1 | tee build.log
+              android/app/src/main/AndroidManifest.xml
+          } 2>&1 | tee -a build.log
 
-      - name: Journal dans le résumé
-        if: always()
+      - name: Construire l'APK
+        run: set -o pipefail; flutter build apk --release 2>&1 | tee -a build.log
+
+      - name: Remonter le journal en cas d'échec
+        if: failure()
         run: |
-          {
-            echo '```'
-            tail -c 50000 build.log 2>/dev/null || echo 'pas de journal'
-            echo '```'
-          } >> "$GITHUB_STEP_SUMMARY"
+          python3 - <<'PY'
+          try:
+              texte = open('build.log', errors='replace').read()
+          except OSError:
+              texte = 'pas de journal'
+          fin = texte[-5000:]
+          encode = fin.replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
+          print(f'::error::{encode}')
+          for ligne in fin.splitlines()[-8:]:
+              if ligne.strip():
+                  print(f'::error::{ligne[:400]}')
+          PY
 
       - name: Publier l'APK
         if: success()
