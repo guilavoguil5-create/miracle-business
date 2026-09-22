@@ -14,6 +14,8 @@ on:
 jobs:
   apk:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v5
 
@@ -84,3 +86,33 @@ jobs:
           name: miracle-business-apk
           path: build/app/outputs/flutter-apk/app-release.apk
           if-no-files-found: error
+
+      # Une page de téléchargement, pour qu'elle n'ait ni compte à créer ni ZIP
+      # à ouvrir : le lien sert toujours le dernier APK construit.
+      #   https://github.com/guilavoguil5-create/miracle-business/releases/latest/download/miracle-business.apk
+      - name: Mettre à jour la page de téléchargement
+        if: success() && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          cp build/app/outputs/flutter-apk/app-release.apk miracle-business.apk
+          NOTES=$(cat <<'TEXTE'
+          Application de gestion de Miracle business, à installer sur Android.
+
+          **Téléchargez le fichier `miracle-business.apk` ci-dessous**, puis
+          touchez-le pour l'installer. Android demandera d'autoriser
+          l'installation depuis cette source : c'est normal pour une app qui ne
+          vient pas du Play Store.
+
+          Les données déjà saisies sont conservées d'une version à l'autre.
+          TEXTE
+          )
+          if gh release view derniere >/dev/null 2>&1; then
+            gh release upload derniere miracle-business.apk --clobber
+            gh release edit derniere --notes "$NOTES"
+          else
+            gh release create derniere miracle-business.apk \
+              --title "Miracle business" \
+              --notes "$NOTES"
+          fi
