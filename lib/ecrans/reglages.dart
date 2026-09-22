@@ -7,6 +7,7 @@ import '../commun/widgets.dart';
 import '../donnees/base.dart';
 import '../donnees/depot.dart';
 import '../donnees/fournisseurs.dart';
+import '../donnees/sauvegarde.dart';
 
 int _entier(String texte) =>
     int.tryParse(texte.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
@@ -105,12 +106,20 @@ class EcranReglages extends ConsumerWidget {
           ),
           Bloc(
             titre: 'Vos données',
-            enfant: Text(
-              'Tout est enregistré sur ce téléphone, et l\'app marche sans '
-              'connexion. La sauvegarde et l\'export arrivent dans la '
-              'prochaine version.',
-              style: theme.textTheme.bodySmall
-                  ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+            enfant: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Tout est enregistré sur ce téléphone, et l\'app marche sans '
+                  'connexion. Faites une sauvegarde de temps en temps et '
+                  'envoyez-la-vous, par exemple sur WhatsApp : si le téléphone '
+                  'est perdu, c\'est elle qui permettra de tout retrouver.',
+                  style: theme.textTheme.bodySmall
+                      ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                ),
+                const SizedBox(height: 12),
+                const _BoutonSauvegarde(),
+              ],
             ),
           ),
         ],
@@ -405,6 +414,43 @@ class _DialogueDepositaireState extends State<_DialogueDepositaire> {
           child: const Text('Enregistrer'),
         ),
       ],
+    );
+  }
+}
+
+/// Sauvegarde : on recopie la base et on laisse Android proposer où l'envoyer.
+class _BoutonSauvegarde extends ConsumerStatefulWidget {
+  const _BoutonSauvegarde();
+
+  @override
+  ConsumerState<_BoutonSauvegarde> createState() => _BoutonSauvegardeState();
+}
+
+class _BoutonSauvegardeState extends ConsumerState<_BoutonSauvegarde> {
+  bool _enCours = false;
+
+  Future<void> _sauvegarder() async {
+    final messager = ScaffoldMessenger.of(context);
+    setState(() => _enCours = true);
+    try {
+      await partagerSauvegarde(ref.read(baseProvider));
+    } on SauvegardeImpossible catch (e) {
+      messager.showSnackBar(SnackBar(content: Text(e.message)));
+    } catch (_) {
+      messager.showSnackBar(
+        const SnackBar(content: Text('La sauvegarde n\'a pas pu se faire.')),
+      );
+    } finally {
+      if (mounted) setState(() => _enCours = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FilledButton.tonalIcon(
+      onPressed: _enCours ? null : _sauvegarder,
+      icon: const Icon(Icons.backup_outlined),
+      label: Text(_enCours ? 'Préparation…' : 'Sauvegarder mes données'),
     );
   }
 }

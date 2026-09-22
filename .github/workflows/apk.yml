@@ -23,7 +23,8 @@ jobs:
           cache: true
 
       - name: Version de Flutter
-        run: flutter --version
+        run: |
+          flutter --version | tee -a "$GITHUB_STEP_SUMMARY"
 
       - name: Dépendances
         run: flutter pub get

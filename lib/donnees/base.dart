@@ -276,10 +276,16 @@ class BaseMiracle extends _$BaseMiracle {
   }
 }
 
+/// Le fichier qui contient tout : commandes, stock, argent.
+///
+/// C'est ce fichier que la sauvegarde recopie.
+Future<File> fichierBase() async {
+  final dossier = await getApplicationDocumentsDirectory();
+  return File(p.join(dossier.path, 'miracle.sqlite'));
+}
+
 LazyDatabase _ouvrir() {
   return LazyDatabase(() async {
-    final dossier = await getApplicationDocumentsDirectory();
-    final fichier = File(p.join(dossier.path, 'miracle.sqlite'));
-    return NativeDatabase.createInBackground(fichier);
+    return NativeDatabase.createInBackground(await fichierBase());
   });
 }
