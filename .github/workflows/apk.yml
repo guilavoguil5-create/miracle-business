@@ -36,7 +36,7 @@ jobs:
       - name: Code généré
         run: |
           set -o pipefail
-          dart run build_runner build --delete-conflicting-outputs 2>&1 \
+          dart run build_runner build 2>&1 \
             | tee -a build.log
 
       - name: Analyse statique
