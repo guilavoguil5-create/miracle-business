@@ -60,8 +60,14 @@ jobs:
               android/app/src/main/AndroidManifest.xml
           } 2>&1 | tee -a build.log
 
+      # Sans --target-platform, l'APK embarque aussi x86_64, qui ne sert qu'aux
+      # émulateurs sur ordinateur : 21 Mo qu'aucun téléphone n'utilise. On ne
+      # garde que les deux ABI ARM, celles de tous les téléphones réels.
       - name: Construire l'APK
-        run: set -o pipefail; flutter build apk --release 2>&1 | tee -a build.log
+        run: |
+          set -o pipefail
+          flutter build apk --release \
+            --target-platform android-arm,android-arm64 2>&1 | tee -a build.log
 
       - name: Remonter le journal en cas d'échec
         if: failure()
